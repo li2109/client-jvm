@@ -45,11 +45,17 @@ class PolygonWebSocketClient
 constructor(
     private val apiKey: String,
     val cluster: PolygonWebSocketCluster,
-    private val listener: PolygonWebSocketListener,
+//    private val listener: PolygonWebSocketListener,
     private val bufferSize: Int = Channel.UNLIMITED,
     private val httpClientProvider: HttpClientProvider = DefaultJvmHttpClientProvider(),
     private val polygonWebSocketDomain: String = "socket.polygon.io"
 ) {
+
+    lateinit var listener: PolygonWebSocketListener
+
+    fun addListener(listener: PolygonWebSocketListener) {
+        this.listener = listener
+    }
 
     private val serializer by lazy {
         Json(JsonConfiguration.Stable.copy(strictMode = false))
@@ -106,6 +112,7 @@ constructor(
         session.send("""{"action": "auth", "params": "$apiKey"}""")
     }
 
+
     /** Blocking version of [connect] */
     fun connectBlocking() = runBlocking { connect() }
 
@@ -133,7 +140,7 @@ constructor(
 
     /** Async/callback version of [subscribe] */
     fun subscribeAsync(subscriptions: List<PolygonWebSocketSubscription>, callback: PolygonCompletionCallback?) =
-        coroutineToCompletionCallback(callback, coroutineScope)  { subscribe(subscriptions) }
+        coroutineToCompletionCallback(callback, coroutineScope) { subscribe(subscriptions) }
 
     /**
      * Unsubscribe to one or more data streams
