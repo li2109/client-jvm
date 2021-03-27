@@ -28,7 +28,7 @@ sealed class PolygonWebSocketMessage {
             @SerialName("z") var tape: String? = null,
             @SerialName("p") var price: Double? = null,
             @SerialName("s") var size: Double? = null,
-            @SerialName("c") var conditions: List<Int> = emptyList(),
+            @SerialName("c") var conditions: MutableList<Int> = arrayListOf(),
             @SerialName("t") var timestampMillis: Long? = null
         ) : StocksMessage()
 
@@ -113,7 +113,7 @@ sealed class PolygonWebSocketMessage {
             @SerialName("pair") var cryptoPair: String? = null,
             @SerialName("p") var price: Double? = null,
             @SerialName("s") var size: Double? = null,
-            @SerialName("c") var conditions: List<Int> = emptyList(),
+            @SerialName("c") var conditions: MutableList<Int> = arrayListOf(),
             @SerialName("i") var tradeId: String? = null,
             @SerialName("t") var exchangeTimestampMillis: Long? = null,
             @SerialName("x") var exchangeId: Long? = null,
@@ -154,8 +154,8 @@ sealed class PolygonWebSocketMessage {
         data class Level2Tick(
             @SerialName("ev") var eventType: String? = null,
             @SerialName("pair") var cryptoPair: String? = null,
-            @SerialName("b") var bidPrices: List<List<Double>> = emptyList(),
-            @SerialName("a") var askPrices: List<List<Double>> = emptyList(),
+            @SerialName("b") var bidPrices: MutableList<MutableList<Double>> = arrayListOf(),
+            @SerialName("a") var askPrices: MutableList<MutableList<Double>> = arrayListOf(),
             @SerialName("t") var timestampMillis: Long? = null,
             @SerialName("x") var exchangeId: Long? = null,
             @SerialName("r") var receivedAtPolygonTimestamp: Long? = null
