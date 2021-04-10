@@ -45,14 +45,18 @@ class PolygonWebSocketClient
 constructor(
     private val apiKey: String,
     val cluster: PolygonWebSocketCluster,
-    private var listener: PolygonWebSocketListener,
+    private var listeners: MutableList<PolygonWebSocketListener>,
     private val bufferSize: Int = Channel.UNLIMITED,
     private val httpClientProvider: HttpClientProvider = DefaultJvmHttpClientProvider(),
     private val polygonWebSocketDomain: String = "socket.polygon.io"
 ) {
 
-    fun setListener(listener: PolygonWebSocketListener) {
-        this.listener = listener
+    suspend fun addListener(listener: PolygonWebSocketListener) {
+        if (this.listeners == null) {
+            this.listeners = mutableListOf();
+        }
+        this.listeners.add(listener);
+        connect()
     }
 
     private val serializer by lazy {
@@ -100,14 +104,24 @@ constructor(
                 .consumeAsFlow()
                 .buffer(bufferSize)
                 .onEach(this::processFrame)
-                .onCompletion { listener.onDisconnect(this@PolygonWebSocketClient) }
+                .onCompletion { disconnectAllListeners() }
+//                .onCompletion { listener.onDisconnect(this@PolygonWebSocketClient) }
                 .launchIn(coroutineScope)
         } catch (ex: Exception) {
-            listener.onError(this, ex)
+            for (listener in listeners) {
+                listener.onError(this, ex)
+            }
+
         }
 
         // Authenticate and wait for result to be processed before calling listener.onAuthenticated
         session.send("""{"action": "auth", "params": "$apiKey"}""")
+    }
+
+    suspend fun disconnectAllListeners() {
+        for (listener in listeners) {
+            listener.onDisconnect(this@PolygonWebSocketClient)
+        }
     }
 
 
@@ -169,8 +183,9 @@ constructor(
     suspend fun disconnect() {
         activeConnection?.disconnect()
         activeConnection = null
-
-        listener.onDisconnect(this)
+        for (listener in listeners) {
+            listener.onDisconnect(this)
+        }
     }
 
     /** Blocking version of [disconnect] */
@@ -189,14 +204,22 @@ constructor(
             }
 
             if (sendRaw) {
-                listener.onReceive(this, RawMessage(frame.readBytes()))
+                for (listener in listeners) {
+                    listener.onReceive(this, RawMessage(frame.readBytes()))
+                }
             } else {
                 val json = serializer.parseJson(String(frame.readBytes()))
-                processFrameJson(json).forEach { listener.onReceive(this, it) }
+                processFrameJson(json).forEach {
+                    for (listener in listeners) {
+                        listener.onReceive(this, it)
+                    }
+                }
             }
         } catch (ex: Exception) {
-            listener.onReceive(this, RawMessage(frame.readBytes()))
-            listener.onError(this, ex)
+            for (listener in listeners) {
+                listener.onReceive(this, RawMessage(frame.readBytes()))
+                listener.onError(this, ex)
+            }
         }
     }
 
@@ -252,7 +275,9 @@ constructor(
             val status = serializer.fromJson(StatusMessage.serializer(), message)
             if (status.message == "authenticated") {
                 activeConnection?.isAuthenticated = true
-                listener.onAuthenticated(this)
+                for (listener in listeners) {
+                    listener.onAuthenticated(this)
+                }
                 return true
             }
         }
