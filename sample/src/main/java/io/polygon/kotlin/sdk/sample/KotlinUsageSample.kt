@@ -80,31 +80,7 @@ suspend fun websocketSample(polygonKey: String) {
     val websocketClient = PolygonWebSocketClient(
         polygonKey,
         PolygonWebSocketCluster.Crypto,
-        object : PolygonWebSocketListener {
-            override fun onAuthenticated(client: PolygonWebSocketClient) {
-                println("Connected!")
-            }
-
-            override fun onReceive(
-                client: PolygonWebSocketClient,
-                message: PolygonWebSocketMessage
-            ) {
-                when (message) {
-                    is PolygonWebSocketMessage.RawMessage -> println(String(message.data))
-                    else -> println("Receieved Message: $message")
-                }
-            }
-
-            override fun onDisconnect(client: PolygonWebSocketClient) {
-                println("Disconnected!")
-            }
-
-            override fun onError(client: PolygonWebSocketClient, error: Throwable) {
-                println("Error: ")
-                error.printStackTrace()
-            }
-
-        },
+        mutableListOf(),
         httpClientProvider = cioClientProvider)
 
     val subscriptions = listOf(

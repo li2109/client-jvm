@@ -63,7 +63,7 @@ public class JavaUsageSample {
         PolygonWebSocketClient client = new PolygonWebSocketClient(
                 polygonKey,
                 PolygonWebSocketCluster.Crypto,
-                new DefaultPolygonWebSocketListener() {
+                Collections.singletonList(new DefaultPolygonWebSocketListener() {
                     @Override
                     public void onReceive(@NotNull PolygonWebSocketClient client, @NotNull PolygonWebSocketMessage message) {
                         if (message instanceof PolygonWebSocketMessage.RawMessage) {
@@ -79,7 +79,7 @@ public class JavaUsageSample {
                         System.out.println("Error in websocket");
                         error.printStackTrace();
                     }
-                });
+                }));
 
         client.connectBlocking();
 
